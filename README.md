@@ -2,6 +2,8 @@
 
 AI-powered React component generator with live preview.
 
+**Note: このプロジェクトは Claude Code Action のサンプルコードです。**
+
 ## Prerequisites
 
 - Node.js 18+
