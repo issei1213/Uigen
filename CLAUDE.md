@@ -88,3 +88,5 @@ Project: id, name, userId, messages (JSON), data (JSON)
 - バーチャルファイルシステムのため、実際のファイルはディスクに書き込まれません
 - ANTHROPIC_API_KEYなしでもプロジェクト実行可能（モックレスポンス使用）
 - データベースはSQLiteで、ファイルは`prisma/dev.db`に配置
+- コメントは控えめに。複雑なコードにのみコメントをつける
+- Schemaが定義しているデータベースは @prisma/schema.prisma です。データベースに保存されているデータの構造を理解する必要があれば、いつでも参照できます。
