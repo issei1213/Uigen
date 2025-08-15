@@ -1,7 +1,7 @@
 {
   "name": "queries",
   "version": "1.0.0",
-  "description": "",
+  "description": "E-commerce data utilities project that provides query functions for a SQLite database",
   "main": "index.js",
   "scripts": {
     "setup": "npm install && node ./scripts/init-claude.js",
