@@ -2,91 +2,66 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## プロジェクト概要
+## Overview
 
-UIGenは、ライブプレビュー機能付きのAI駆動Reactコンポーネントジェネレーターです。Claude Code Actionのサンプルプロジェクトとして構築されており、ユーザーがReactコンポーネントを説明すると、バーチャルファイルシステムを使用してリアルタイムで生成されます。
+This is an e-commerce data utilities project that provides query functions for a SQLite database. The project uses TypeScript.
 
-## 開発コマンド
+## Database Schema
 
-### セットアップ
+The SQLite database contains tables for a complete e-commerce system including:
+
+- customers, addresses, customer_segments, customer_activity_log
+- products, categories, inventory, warehouses
+- orders, order_items
+- reviews
+- promotions
+
+See `schema.ts` for the complete database schema definition.
+
+## Project Structure
+
+- `src/main.ts` - Entry point (currently minimal implementation)
+- `src/schema.ts` - Database schema creation functions
+- `src/queries/` - Directory containing all query modules:
+  - `customer_queries.ts` - Customer-related queries
+  - `product_queries.ts` - Product catalog queries
+  - `order_queries.ts` - Order management queries
+  - `analytics_queries.ts` - Analytics and reporting queries
+  - `inventory_queries.ts` - Inventory management queries
+  - `promotion_queries.ts` - Promotion queries
+  - `review_queries.ts` - Product review queries
+  - `shipping_queries.ts` - Shipping queries
+
+## Development Commands
+
 ```bash
+# Install dependencies
 npm run setup
 ```
-依存関係のインストール、Prismaクライアントの生成、データベースマイグレーションを実行します。
 
-### 開発
-```bash
-npm run dev          # Turbopack使用の開発サーバー起動
-npm run dev:daemon   # バックグラウンドで開発サーバー起動（ログはlogs.txtに出力）
+## Working with Queries
+
+All query functions return Promises and follow these patterns:
+
+- Single record queries use `db.get()`
+- Multiple record queries use `db.all()`
+- Use parameterized queries to prevent SQL injection
+- Handle errors by rejecting the Promise
+
+Example query pattern:
+
+```typescript
+export function getCustomerByEmail(db: Database, email: string): Promise<any> {
+  const query = `SELECT * FROM customers WHERE email = ?`;
+  return new Promise((resolve, reject) => {
+    db.get(query, [email], (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
 ```
 
-### ビルドとリント
-```bash
-npm run build     # 本番用ビルド
-npm run lint      # ESLint実行
-```
+## Critical Guidance
 
-### テスト
-```bash
-npm test          # Vitestテスト実行
-```
-
-### データベース
-```bash
-npm run db:reset  # データベースリセット（--forceフラグ付き）
-```
-
-## アーキテクチャ概要
-
-### 基本構造
-- **Next.js 15** with App Router and React 19
-- **バーチャルファイルシステム**: `src/lib/file-system.ts`による（ディスクに書き込まない）メモリ内ファイル管理
-- **リアルタイムチャット**: `src/app/api/chat/route.ts`経由のAnthropic Claude使用AI駆動コンポーネント生成
-- **デュアルビュー**: 左にチャット、右にプレビュー/コードエディターの分割インターフェース
-
-### 主要コンポーネントアーキテクチャ
-
-**メインレイアウト** (`src/app/main-content.tsx`):
-- 分割ペインインターフェースに`ResizablePanelGroup`を使用
-- 全体を`FileSystemProvider`と`ChatProvider`でラップ
-- プレビューとコードビューの切り替え
-
-**バーチャルファイルシステム** (`src/lib/file-system.ts`):
-- ディレクトリ/ファイル操作を含む完全なメモリ内ファイルシステム
-- プロジェクト永続化のためのシリアル化/デシリアル化
-- AI駆動ファイル操作のためのツール統合
-
-**コンテキストプロバイダー**:
-- `FileSystemProvider`: バーチャルファイル管理、AIからのツール呼び出し処理
-- `ChatProvider`: チャット状態とAIインタラクション管理
-
-**AI統合**:
-- Vercel AI SDKとAnthropic Claudeを使用
-- カスタムツール: ファイル操作用`str_replace_editor`と`file_manager`
-- レスポンスをストリーミングし、自動的にデータベースに保存
-
-### データベーススキーマ (Prisma/SQLite)
-```
-User: id, email, password, projects[]
-Project: id, name, userId, messages (JSON), data (JSON)
-```
-- プロジェクトはチャットメッセージとバーチャルファイルシステムの状態をJSONとして保存
-- `src/generated/prisma/`にPrismaクライアント生成
-
-### テスト
-- **Vitest** with jsdom環境
-- コンポーネントテスト用React Testing Library
-- 各モジュール内の`__tests__/`ディレクトリにテスト配置
-
-### 認証
-- `src/lib/auth.ts`のカスタムJWTベース認証
-- オプション - APIキーなしでもモックレスポンスでアプリ動作
-
-## 重要な注意事項
-
-- これはClaude Code Actionsの**サンプルプロジェクト**です
-- バーチャルファイルシステムのため、実際のファイルはディスクに書き込まれません
-- ANTHROPIC_API_KEYなしでもプロジェクト実行可能（モックレスポンス使用）
-- データベースはSQLiteで、ファイルは`prisma/dev.db`に配置
-- コメントは控えめに。複雑なコードにのみコメントをつける
-- Schemaが定義しているデータベースは @prisma/schema.prisma です。データベースに保存されているデータの構造を理解する必要があれば、いつでも参照できます。
+- Critical: All database queries must be written in the ./src/queries dir

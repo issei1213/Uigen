@@ -1,0 +1,11 @@
+{
+  "session_id": "4a7f753f-7660-4a40-81ef-c7a3d06bb3f1",
+  "transcript_path": "/Users/sgrider/.claude/projects/-Users-sgrider-code-enablements-claude-code-course-prod-queries/4a7f753f-7660-4a40-81ef-c7a3d06bb3f1.jsonl",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/Users/sgrider/code/enablements/claude-code-course/prod/queries/src/queries/order_queries.ts",
+    "old_string": "export async function getPendingOrders(db: Database): Promise<any[]> {\n  const query = `\n    SELECT \n        o.order_id,\n        o.order_date,\n        o.total_amount,\n        c.first_name || ' ' || c.last_name as customer_name,\n        c.phone,\n        julianday('now') - julianday(o.order_date) as days_since_created\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.status = 'pending'\n    ORDER BY o.order_date\n    `;\n\n  const rows = await db.all(query, []);\n  return rows;\n}",
+    "new_string": "export async function getPendingOrders(db: Database, olderThanDays?: number): Promise<any[]> {\n  let query = `\n    SELECT \n        o.id as order_id,\n        o.order_number,\n        o.created_at as order_date,\n        o.total_amount,\n        c.first_name || ' ' || c.last_name as customer_name,\n        c.phone,\n        julianday('now') - julianday(o.created_at) as days_since_created\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.id\n    WHERE o.status = 'pending'\n    `;\n\n  const params: any[] = [];\n  \n  if (olderThanDays !== undefined) {\n    query += ` AND julianday('now') - julianday(o.created_at) > ?`;\n    params.push(olderThanDays);\n  }\n  \n  query += ` ORDER BY o.created_at`;\n\n  const rows = await db.all(query, params);\n  return rows;\n}"
+  }
+}
