@@ -4,8 +4,7 @@ import path from "path";
 const REVIEW_DIR = "src/queries";
 
 async function main() {
-  process.exit(0);
-  // Read JSON input from stdin
+  // 標準入力からJSONデータを読み込む
   const input = await new Promise((resolve) => {
     let data = "";
     process.stdin.on("data", (chunk) => (data += chunk));
@@ -15,22 +14,22 @@ async function main() {
   const hookData = JSON.parse(input);
   const toolInput = hookData.tool_input;
 
-  // Check if this is a file modification in ./queries
+  // ./queriesディレクトリ内のファイル変更かどうかを確認
   const filePath = toolInput.file_path || toolInput.path;
   if (!filePath) {
     process.exit(0);
   }
 
-  // Normalize paths for comparison
+  // パスを正規化して比較用に整形
   const normalizedFilePath = path.resolve(filePath);
   const queriesDir = path.resolve(process.cwd(), REVIEW_DIR);
 
-  // Check if file is within queries directory (handles subdirectories too)
+  // ファイルがqueriesディレクトリ（サブディレクトリ含む）内かどうかを確認
   if (!normalizedFilePath.startsWith(queriesDir + path.sep)) {
     process.exit(0);
   }
 
-  // Prepare prompt for analysis
+  // 分析用プロンプトを作成
   const newContent = toolInput.content || toolInput.contents;
   const prompt = `You are reviewing a proposed change to a database query file.
 Your task is to analyze if the new or modified query functions could be 
@@ -56,6 +55,7 @@ If yes, provide specific feedback on which existing functions could be used inst
 If no, just say "Changes look appropriate."`;
 
   const messages = [];
+  // Claude APIからのメッセージを非同期で受信
   for await (const message of query({
     prompt,
     abortController: new AbortController(),
@@ -63,23 +63,24 @@ If no, just say "Changes look appropriate."`;
     messages.push(message);
   }
 
-  // Extract the analysis result
+  // 分析結果を抽出
   const resultMessage = messages.find((m) => m.type === "result");
   if (!resultMessage || resultMessage.subtype !== "success") {
     process.exit(0);
   }
 
-  // If changes are appropriate, allow them
+  // 変更が適切な場合はそのまま許可
   if (resultMessage.result.includes("Changes look appropriate")) {
     process.exit(0);
   }
 
-  // Otherwise, block with feedback
+  // それ以外の場合は重複のフィードバックを表示して終了
   console.error(`Query duplication detected:\n\n${resultMessage.result}`);
   process.exit(2);
 }
 
 main().catch((err) => {
+  // フック実行時のエラーを表示
   console.error(`Hook error: ${err.message}`);
   process.exit(1);
 });
